@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>871</width>
-    <height>621</height>
+    <height>681</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,10 +15,11 @@
   </property>
   <property name="styleSheet">
    <string notr="true">
-QMainWindow, QWidget { background-color: #f0f7ff; font-family: &quot;Segoe UI&quot;, Arial, sans-serif; }
+QMainWindow, QDialog { background-color: #f0f7ff; font-family: "Segoe UI", Arial, sans-serif; }
+QWidget { font-family: "Segoe UI", Arial, sans-serif; }
 
 QFrame#sidebar {
-    background-color: #1a3a5c;
+    background-color: #1e3a5f;
     border: none;
 }
 
@@ -30,15 +31,18 @@ QLabel#appNameLabel {
 }
 
 QFrame#headerFrame {
-    background-color: #1a3a5c;
-    border-bottom: 2px solid #0d2137;
+    background-color: #1e3a5f;
+    min-height: 80px;
+    max-height: 80px;
 }
 
 QLabel#headerTitle {
-    color: #e8f4fd;
+    color: white;
     font-size: 24px;
     font-weight: bold;
     padding-left: 20px;
+    padding-top: 0px;
+    padding-bottom: 0px;
 }
 
 QGroupBox {
@@ -100,7 +104,7 @@ QTableWidget::item:selected { background-color: #bbdefb; color: #0d1b2a; }
 QTableWidget::item:hover { background-color: #e3f2fd; }
 
 QHeaderView::section {
-    background-color: #1565C0;
+    background-color: #2b6cb0;
     color: white;
     padding: 10px;
     border: none;
@@ -125,8 +129,8 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
 
 QFrame#searchFrame {
     background-color: white;
-    border-radius: 10px;
     border: 1.5px solid #90caf9;
+    border-radius: 10px;
 }
 
 QFrame#searchFrame QLabel { color: #1a3a5c; font-weight: 600; }
@@ -194,7 +198,7 @@ QFrame#searchFrame QLabel { color: #1a3a5c; font-weight: 600; }
           </size>
          </property>
          <property name="styleSheet">
-          <string notr="true">QFrame { background-color: #0d2137; border: none; }</string>
+          <string notr="true">QFrame { background-color: #152d4a; border: none; }</string>
          </property>
          <layout class="QHBoxLayout" name="logoLayout">
           <property name="leftMargin">
@@ -251,7 +255,7 @@ QPushButton:checked { background-color: rgba(100,181,246,0.18); border-left: 4px
          </string>
          </property>
          <property name="text">
-          <string>  Dashboard</string>
+          <string>  Students </string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -271,7 +275,7 @@ QPushButton:checked { background-color: rgba(100,181,246,0.18); border-left: 4px
          </string>
          </property>
          <property name="text">
-          <string>  Manage Students</string>
+          <string>  Enroll Student</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -288,7 +292,7 @@ QPushButton:checked { background-color: rgba(100,181,246,0.18); border-left: 4px
          </string>
          </property>
          <property name="text">
-          <string>  Manage Programs</string>
+          <string> Programs</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -305,7 +309,7 @@ QPushButton:checked { background-color: rgba(100,181,246,0.18); border-left: 4px
          </string>
          </property>
          <property name="text">
-          <string>  Manage Colleges</string>
+          <string> Colleges</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -348,18 +352,18 @@ QPushButton:checked { background-color: rgba(100,181,246,0.18); border-left: 4px
        </property>
        <item>
         <widget class="QFrame" name="headerFrame">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>65</height>
-          </size>
+        <property name="minimumSize">
+            <size>
+                <width>0</width>
+                <height>65</height>
+            </size>
          </property>
          <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>65</height>
-          </size>
-         </property>
+            <size>
+                <width>16777215</width>
+                 <height>65</height>
+                </size>
+            </property>
          <layout class="QVBoxLayout" name="headerLayout">
           <property name="leftMargin">
            <number>0</number>
@@ -376,10 +380,7 @@ QPushButton:checked { background-color: rgba(100,181,246,0.18); border-left: 4px
           <item>
            <widget class="QLabel" name="headerTitle">
             <property name="text">
-             <string>&lt;span style=&quot;color:#0d47a1; font-weight:700; font-size:25
-px;&quot;&gt;
-    Student Information System
-&lt;/span&gt;</string>
+             <string>Student Information System</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignmentFlag::AlignVCenter</set>
@@ -436,13 +437,28 @@ px;&quot;&gt;
                 </property>
                 <item>
                  <widget class="QLabel" name="label">
+                  <property name="minimumSize">
+                   <size>
+                    <width>70</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>70</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
-                   <string> Search by:</string>
+                   <string>Search by:</string>
                   </property>
                  </widget>
                 </item>
                 <item>
                  <widget class="QComboBox" name="comboSearchField">
+                  <property name="styleSheet">
+                   <string notr="true">QComboBox { background-color: white; }</string>
+                  </property>
                   <item>
                    <property name="text">
                     <string>Student ID</string>
@@ -501,16 +517,17 @@ QPushButton:hover {
                 </property>
                 <item>
                  <widget class="QLabel" name="labelSort">
-                  <property name="font">
-                   <font>
-                    <family>Segoe UI</family>
-                    <pointsize>-1</pointsize>
-                    <kerning>true</kerning>
-                    <fontweight>DemiBold</fontweight>
-                   </font>
+                  <property name="minimumSize">
+                   <size>
+                    <width>70</width>
+                    <height>0</height>
+                   </size>
                   </property>
-                  <property name="toolTip">
-                   <string notr="true"/>
+                  <property name="maximumSize">
+                   <size>
+                    <width>70</width>
+                    <height>16777215</height>
+                   </size>
                   </property>
                   <property name="text">
                    <string>Sort by:</string>
@@ -519,6 +536,9 @@ QPushButton:hover {
                 </item>
                 <item>
                  <widget class="QComboBox" name="comboSortField">
+                  <property name="styleSheet">
+                   <string notr="true">QComboBox { background-color: white; }</string>
+                  </property>
                   <item>
                    <property name="text">
                     <string>Student ID</string>
@@ -553,9 +573,19 @@ QPushButton:hover {
                 </item>
                 <item>
                  <widget class="QComboBox" name="comboSortDir">
-                  <property name="styleSheet"><string notr="true">QComboBox { border:1.5px solid #90caf9; border-radius:6px; padding:6px 8px; font-size:12px; background:white; min-width:70px; }</string></property>
-                  <item><property name="text"><string>↑ ASC</string></property></item>
-                  <item><property name="text"><string>↓ DESC</string></property></item>
+                  <property name="styleSheet">
+                   <string notr="true">QComboBox { border:1.5px solid #90caf9; border-radius:6px; padding:6px 8px; font-size:12px; background:white; min-width:70px; }</string>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>↑ ASC</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>↓ DESC</string>
+                   </property>
+                  </item>
                  </widget>
                 </item>
                 <item>
@@ -598,9 +628,6 @@ QPushButton:hover {
            </item>
            <item>
             <widget class="QTableWidget" name="tableStudents">
-             <property name="toolTip">
-              <string/>
-             </property>
              <property name="frameShadow">
               <enum>QFrame::Shadow::Plain</enum>
              </property>
@@ -652,40 +679,59 @@ QPushButton:hover {
              </property>
              <item>
               <widget class="QPushButton" name="btnStudentPrev">
-               <property name="text"><string>◀ Prev</string></property>
                <property name="styleSheet">
                 <string notr="true">QPushButton { background-color:#e3f0ff; color:#1565c0; border:1px solid #90caf9; border-radius:6px; padding:5px 14px; font-weight:600; font-size:12px; }
 QPushButton:hover { background-color:#bbdefb; }
 QPushButton:disabled { background-color:#f5f5f5; color:#bdbdbd; border-color:#e0e0e0; }</string>
+               </property>
+               <property name="text">
+                <string>◀ Prev</string>
                </property>
               </widget>
              </item>
              <item>
               <widget class="QLabel" name="labelStudentPage">
-               <property name="text"><string>Page 1 of 1</string></property>
-               <property name="styleSheet"><string notr="true">QLabel { color:#1565c0; font-size:12px; font-weight:600; }</string></property>
+               <property name="styleSheet">
+                <string notr="true">QLabel { color:#1565c0; font-size:12px; font-weight:600; }</string>
+               </property>
+               <property name="text">
+                <string>Page 1 of 1</string>
+               </property>
               </widget>
              </item>
              <item>
               <widget class="QPushButton" name="btnStudentNext">
-               <property name="text"><string>Next ▶</string></property>
                <property name="styleSheet">
                 <string notr="true">QPushButton { background-color:#e3f0ff; color:#1565c0; border:1px solid #90caf9; border-radius:6px; padding:5px 14px; font-weight:600; font-size:12px; }
 QPushButton:hover { background-color:#bbdefb; }
 QPushButton:disabled { background-color:#f5f5f5; color:#bdbdbd; border-color:#e0e0e0; }</string>
                </property>
+               <property name="text">
+                <string>Next ▶</string>
+               </property>
               </widget>
              </item>
              <item>
               <spacer name="studentPagSpacer">
-               <property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property>
-               <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
               </spacer>
              </item>
              <item>
               <widget class="QLabel" name="labelStudentTotal">
-               <property name="text"><string>0 records</string></property>
-               <property name="styleSheet"><string notr="true">QLabel { color:#5a7fa8; font-size:12px; }</string></property>
+               <property name="styleSheet">
+                <string notr="true">QLabel { color:#5a7fa8; font-size:12px; }</string>
+               </property>
+               <property name="text">
+                <string>0 records</string>
+               </property>
               </widget>
              </item>
             </layout>
@@ -1183,9 +1229,19 @@ QPushButton:hover {
               </item>
               <item>
                <widget class="QComboBox" name="comboSortDirProgram">
-                <property name="styleSheet"><string notr="true">QComboBox { border:1.5px solid #90caf9; border-radius:6px; padding:6px 8px; font-size:12px; background:white; min-width:70px; }</string></property>
-                <item><property name="text"><string>↑ ASC</string></property></item>
-                <item><property name="text"><string>↓ DESC</string></property></item>
+                <property name="styleSheet">
+                 <string notr="true">QComboBox { border:1.5px solid #90caf9; border-radius:6px; padding:6px 8px; font-size:12px; background:white; min-width:70px; }</string>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>↑ ASC</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>↓ DESC</string>
+                 </property>
+                </item>
                </widget>
               </item>
               <item>
@@ -1241,39 +1297,64 @@ QPushButton:hover {
            </item>
            <item>
             <layout class="QHBoxLayout" name="programPagRow">
-             <property name="spacing"><number>8</number></property>
+             <property name="spacing">
+              <number>8</number>
+             </property>
              <item>
               <widget class="QPushButton" name="btnProgramPrev">
-               <property name="text"><string>◀ Prev</string></property>
-               <property name="styleSheet"><string notr="true">QPushButton { background-color:#e3f0ff; color:#1565c0; border:1px solid #90caf9; border-radius:6px; padding:5px 14px; font-weight:600; font-size:12px; }
+               <property name="styleSheet">
+                <string notr="true">QPushButton { background-color:#e3f0ff; color:#1565c0; border:1px solid #90caf9; border-radius:6px; padding:5px 14px; font-weight:600; font-size:12px; }
 QPushButton:hover { background-color:#bbdefb; }
-QPushButton:disabled { background-color:#f5f5f5; color:#bdbdbd; border-color:#e0e0e0; }</string></property>
+QPushButton:disabled { background-color:#f5f5f5; color:#bdbdbd; border-color:#e0e0e0; }</string>
+               </property>
+               <property name="text">
+                <string>◀ Prev</string>
+               </property>
               </widget>
              </item>
              <item>
               <widget class="QLabel" name="labelProgramPage">
-               <property name="text"><string>Page 1 of 1</string></property>
-               <property name="styleSheet"><string notr="true">QLabel { color:#1565c0; font-size:12px; font-weight:600; }</string></property>
+               <property name="styleSheet">
+                <string notr="true">QLabel { color:#1565c0; font-size:12px; font-weight:600; }</string>
+               </property>
+               <property name="text">
+                <string>Page 1 of 1</string>
+               </property>
               </widget>
              </item>
              <item>
               <widget class="QPushButton" name="btnProgramNext">
-               <property name="text"><string>Next ▶</string></property>
-               <property name="styleSheet"><string notr="true">QPushButton { background-color:#e3f0ff; color:#1565c0; border:1px solid #90caf9; border-radius:6px; padding:5px 14px; font-weight:600; font-size:12px; }
+               <property name="styleSheet">
+                <string notr="true">QPushButton { background-color:#e3f0ff; color:#1565c0; border:1px solid #90caf9; border-radius:6px; padding:5px 14px; font-weight:600; font-size:12px; }
 QPushButton:hover { background-color:#bbdefb; }
-QPushButton:disabled { background-color:#f5f5f5; color:#bdbdbd; border-color:#e0e0e0; }</string></property>
+QPushButton:disabled { background-color:#f5f5f5; color:#bdbdbd; border-color:#e0e0e0; }</string>
+               </property>
+               <property name="text">
+                <string>Next ▶</string>
+               </property>
               </widget>
              </item>
              <item>
               <spacer name="programPagSpacer">
-               <property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property>
-               <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
               </spacer>
              </item>
              <item>
               <widget class="QLabel" name="labelProgramTotal">
-               <property name="text"><string>0 records</string></property>
-               <property name="styleSheet"><string notr="true">QLabel { color:#5a7fa8; font-size:12px; }</string></property>
+               <property name="styleSheet">
+                <string notr="true">QLabel { color:#5a7fa8; font-size:12px; }</string>
+               </property>
+               <property name="text">
+                <string>0 records</string>
+               </property>
               </widget>
              </item>
             </layout>
@@ -1536,9 +1617,19 @@ QPushButton:hover {
               </item>
               <item>
                <widget class="QComboBox" name="comboSortDirCollege">
-                <property name="styleSheet"><string notr="true">QComboBox { border:1.5px solid #90caf9; border-radius:6px; padding:6px 8px; font-size:12px; background:white; min-width:70px; }</string></property>
-                <item><property name="text"><string>↑ ASC</string></property></item>
-                <item><property name="text"><string>↓ DESC</string></property></item>
+                <property name="styleSheet">
+                 <string notr="true">QComboBox { border:1.5px solid #90caf9; border-radius:6px; padding:6px 8px; font-size:12px; background:white; min-width:70px; }</string>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>↑ ASC</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>↓ DESC</string>
+                 </property>
+                </item>
                </widget>
               </item>
               <item>
@@ -1589,39 +1680,64 @@ QPushButton:hover {
            </item>
            <item>
             <layout class="QHBoxLayout" name="collegePagRow">
-             <property name="spacing"><number>8</number></property>
+             <property name="spacing">
+              <number>8</number>
+             </property>
              <item>
               <widget class="QPushButton" name="btnCollegePrev">
-               <property name="text"><string>◀ Prev</string></property>
-               <property name="styleSheet"><string notr="true">QPushButton { background-color:#e3f0ff; color:#1565c0; border:1px solid #90caf9; border-radius:6px; padding:5px 14px; font-weight:600; font-size:12px; }
+               <property name="styleSheet">
+                <string notr="true">QPushButton { background-color:#e3f0ff; color:#1565c0; border:1px solid #90caf9; border-radius:6px; padding:5px 14px; font-weight:600; font-size:12px; }
 QPushButton:hover { background-color:#bbdefb; }
-QPushButton:disabled { background-color:#f5f5f5; color:#bdbdbd; border-color:#e0e0e0; }</string></property>
+QPushButton:disabled { background-color:#f5f5f5; color:#bdbdbd; border-color:#e0e0e0; }</string>
+               </property>
+               <property name="text">
+                <string>◀ Prev</string>
+               </property>
               </widget>
              </item>
              <item>
               <widget class="QLabel" name="labelCollegePage">
-               <property name="text"><string>Page 1 of 1</string></property>
-               <property name="styleSheet"><string notr="true">QLabel { color:#1565c0; font-size:12px; font-weight:600; }</string></property>
+               <property name="styleSheet">
+                <string notr="true">QLabel { color:#1565c0; font-size:12px; font-weight:600; }</string>
+               </property>
+               <property name="text">
+                <string>Page 1 of 1</string>
+               </property>
               </widget>
              </item>
              <item>
               <widget class="QPushButton" name="btnCollegeNext">
-               <property name="text"><string>Next ▶</string></property>
-               <property name="styleSheet"><string notr="true">QPushButton { background-color:#e3f0ff; color:#1565c0; border:1px solid #90caf9; border-radius:6px; padding:5px 14px; font-weight:600; font-size:12px; }
+               <property name="styleSheet">
+                <string notr="true">QPushButton { background-color:#e3f0ff; color:#1565c0; border:1px solid #90caf9; border-radius:6px; padding:5px 14px; font-weight:600; font-size:12px; }
 QPushButton:hover { background-color:#bbdefb; }
-QPushButton:disabled { background-color:#f5f5f5; color:#bdbdbd; border-color:#e0e0e0; }</string></property>
+QPushButton:disabled { background-color:#f5f5f5; color:#bdbdbd; border-color:#e0e0e0; }</string>
+               </property>
+               <property name="text">
+                <string>Next ▶</string>
+               </property>
               </widget>
              </item>
              <item>
               <spacer name="collegePagSpacer">
-               <property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property>
-               <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
               </spacer>
              </item>
              <item>
               <widget class="QLabel" name="labelCollegeTotal">
-               <property name="text"><string>0 records</string></property>
-               <property name="styleSheet"><string notr="true">QLabel { color:#5a7fa8; font-size:12px; }</string></property>
+               <property name="styleSheet">
+                <string notr="true">QLabel { color:#5a7fa8; font-size:12px; }</string>
+               </property>
+               <property name="text">
+                <string>0 records</string>
+               </property>
               </widget>
              </item>
             </layout>
