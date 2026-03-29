@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel,
     QLineEdit, QComboBox, QPushButton, QGroupBox,
 )
-from PyQt6.QtCore import Qt, QRegularExpression, QSize, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QRegularExpression, QSize
 from PyQt6.QtGui import QPixmap, QIcon, QPainter, QRegularExpressionValidator, QColor
 
 import mysql.connector
@@ -41,7 +41,7 @@ class DBManager:
             )
             tmp.commit(); cur.close(); tmp.close()
             self.conn = mysql.connector.connect(**DB_CONFIG)
-            self.conn.autocommit = False
+            self.conn.autocommit = True
         except Error as e:
             raise ConnectionError(
                 f"Cannot connect to MySQL.\n\nError: {e}\n\n"
@@ -51,7 +51,7 @@ class DBManager:
     def _cursor(self):
         if not self.conn or not self.conn.is_connected():
             self.conn = mysql.connector.connect(**DB_CONFIG)
-            self.conn.autocommit = False
+            self.conn.autocommit = True
         return self.conn.cursor(dictionary=True)
 
     def _init_schema(self):
@@ -232,143 +232,6 @@ class DBManager:
 
     def delete_student(self, sid):
         self._exec("DELETE FROM students WHERE id=%s", (sid,))
-
-    def count_students(self):
-        return self._fetchone("SELECT COUNT(*) as cnt FROM students")["cnt"]
-
-    def count_programs(self):
-        return self._fetchone("SELECT COUNT(*) as cnt FROM programs")["cnt"]
-
-    def count_colleges(self):
-        return self._fetchone("SELECT COUNT(*) as cnt FROM colleges")["cnt"]
-
-class SeederThread(QThread):
-    progress = pyqtSignal(int)
-    done     = pyqtSignal()
-    error    = pyqtSignal(str)
-
-    def __init__(self, db: DBManager):
-        super().__init__()
-        self.db = db
-
-    def run(self):
-        try:
-            import random
-            from faker import Faker
-            fake = Faker("en_PH")
-
-            colleges = [
-                ("CCS",  "College of Computer Studies"),
-                ("COE",  "College of Engineering"),
-                ("CBA",  "College of Business Administration"),
-                ("CON",  "College of Nursing"),
-                ("CED",  "College of Education"),
-                ("CAS",  "College of Arts and Sciences"),
-                ("CAF",  "College of Agriculture and Forestry"),
-                ("CCJE", "College of Criminal Justice Education"),
-                ("CTHM", "College of Tourism and Hospitality Management"),
-                ("CMED", "College of Medicine"),
-                ("COL",  "College of Law"),
-                ("CARCH","College of Architecture"),
-            ]
-            cur = self.db._cursor()
-            cur.executemany("INSERT IGNORE INTO colleges(code, name) VALUES(%s,%s)", colleges)
-            self.db.conn.commit()
-
-            programs = [
-                ("BSCS",   "Bachelor of Science in Computer Science",          "CCS"),
-                ("BSIT",   "Bachelor of Science in Information Technology",    "CCS"),
-                ("BSIS",   "Bachelor of Science in Information Systems",       "CCS"),
-                ("BSCPE",  "Bachelor of Science in Computer Engineering",      "COE"),
-                ("BSECE",  "Bachelor of Science in Electronics Engineering",   "COE"),
-                ("BSME",   "Bachelor of Science in Mechanical Engineering",    "COE"),
-                ("BSCE",   "Bachelor of Science in Civil Engineering",         "COE"),
-                ("BSEE",   "Bachelor of Science in Electrical Engineering",    "COE"),
-                ("BSBA",   "Bachelor of Science in Business Administration",   "CBA"),
-                ("BSACCO", "Bachelor of Science in Accounting",                "CBA"),
-                ("BSMGMT", "Bachelor of Science in Management",                "CBA"),
-                ("BSMKT",  "Bachelor of Science in Marketing",                 "CBA"),
-                ("BSN",    "Bachelor of Science in Nursing",                   "CON"),
-                ("BSMID",  "Bachelor of Science in Midwifery",                 "CON"),
-                ("BSED",   "Bachelor of Secondary Education",                  "CED"),
-                ("BEED",   "Bachelor of Elementary Education",                 "CED"),
-                ("BSMATH", "Bachelor of Science in Mathematics",               "CAS"),
-                ("ABCOMM", "Bachelor of Arts in Communication",                "CAS"),
-                ("ABPOLS", "Bachelor of Arts in Political Science",            "CAS"),
-                ("BSAG",   "Bachelor of Science in Agriculture",               "CAF"),
-                ("BSFOR",  "Bachelor of Science in Forestry",                  "CAF"),
-                ("BSCRIM", "Bachelor of Science in Criminology",               "CCJE"),
-                ("BSFS",   "Bachelor of Science in Forensic Science",          "CCJE"),
-                ("BSHM",   "Bachelor of Science in Hospitality Management",    "CTHM"),
-                ("BSTM",   "Bachelor of Science in Tourism Management",        "CTHM"),
-                ("BSARCH", "Bachelor of Science in Architecture",              "CARCH"),
-                ("BSID",   "Bachelor of Science in Interior Design",           "CARCH"),
-                ("MD",     "Doctor of Medicine",                               "CMED"),
-                ("JD",     "Juris Doctor",                                     "COL"),
-                ("BSPHARM","Bachelor of Science in Pharmacy",                  "CON"),
-                ("BSPT",   "Bachelor of Science in Physical Therapy",          "CON"),
-                ("BSND",   "Bachelor of Science in Nutrition and Dietetics",   "CON"),
-            ]
-            cur.executemany(
-                "INSERT IGNORE INTO programs(code, name, college_code) VALUES(%s,%s,%s)", programs
-            )
-            self.db.conn.commit()
-
-            prog_codes = [p[0] for p in programs]
-            existing = self.db._fetchone("SELECT COUNT(*) as cnt FROM students")["cnt"]
-            needed   = max(0, 5000 - existing)
-
-            if needed > 0:
-                used_ids = set(r["id"] for r in self.db._fetch("SELECT id FROM students"))
-                batch    = []
-                inserted = 0
-                year_counter = {}
-
-                while inserted < needed:
-                    yr = random.randint(2018, 2024)
-                    year_counter[yr] = year_counter.get(yr, random.randint(1, 300)) + 1
-                    sid = f"{yr}-{year_counter[yr]:04d}"
-                    if sid in used_ids:
-                        continue
-                    used_ids.add(sid)
-                    batch.append((
-                        sid,
-                        fake.first_name()[:100],
-                        fake.last_name()[:100],
-                        random.choice(["Male", "Female"]),
-                        random.randint(1, 4),
-                        random.choice(prog_codes + [None, None]),
-                    ))
-                    inserted += 1
-                    if len(batch) == 500:
-                        cur.executemany(
-                            "INSERT IGNORE INTO students"
-                            "(id, first_name, last_name, gender, year_level, program_code) "
-                            "VALUES(%s,%s,%s,%s,%s,%s)", batch
-                        )
-                        self.db.conn.commit()
-                        self.progress.emit(int(inserted / needed * 100))
-                        batch = []
-
-                if batch:
-                    cur.executemany(
-                        "INSERT IGNORE INTO students"
-                        "(id, first_name, last_name, gender, year_level, program_code) "
-                        "VALUES(%s,%s,%s,%s,%s,%s)", batch
-                    )
-                    self.db.conn.commit()
-
-            cur.close()
-            self.progress.emit(100)
-            self.done.emit()
-
-        except ImportError:
-            self.error.emit(
-                "Faker not installed.\nRun:  pip install faker\n\n"
-                "The app will still work — you can add data manually."
-            )
-        except Exception as e:
-            self.error.emit(str(e))
 
 def _apply_student_id_validator(le):
     rx = QRegularExpression(r"^\d{0,4}-?\d{0,4}$")
@@ -556,10 +419,8 @@ class EstudyoApp(QtWidgets.QMainWindow):
         self.db = db
         uic.loadUi("estudyo_main.ui", self)
         self.setWindowTitle("Estudyo — Student Information System")
-
-        for p in ["icons/estudyo_logo.svg"]:
-            if os.path.exists(p):
-                self.setWindowIcon(QIcon(p)); break
+        if os.path.exists("icons/estudyo_logo.svg"):
+            self.setWindowIcon(QIcon("icons/estudyo_logo.svg"))
 
         self._student_page = 1
         self._program_page = 1
@@ -571,11 +432,10 @@ class EstudyoApp(QtWidgets.QMainWindow):
         self.show()
 
     def _setup_ui(self):
-        for p in ["icons/estudyo_logo.svg"]:
-            if os.path.exists(p):
-                px = QPixmap(p).scaled(44, 44, Qt.AspectRatioMode.KeepAspectRatio,
-                                       Qt.TransformationMode.SmoothTransformation)
-                self.logoLabel.setPixmap(px); break
+        if os.path.exists("icons/estudyo_logo.svg"):
+            px = QPixmap("icons/estudyo_logo.svg").scaled(44, 44, Qt.AspectRatioMode.KeepAspectRatio,
+                                   Qt.TransformationMode.SmoothTransformation)
+            self.logoLabel.setPixmap(px)
 
         for btn_name, paths in [
             ("btnManage",   ["student.svg", "icons/student.svg"]),
@@ -598,14 +458,9 @@ class EstudyoApp(QtWidgets.QMainWindow):
             tbl.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
             tbl.setAlternatingRowColors(True)
             tbl.verticalHeader().setVisible(False)
-            tbl.horizontalHeader().setStretchLastSection(True)
-            tbl.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-
-        self.tableStudents.setColumnWidth(0, 95)
-        self.tableStudents.setColumnWidth(1, 130)
-        self.tableStudents.setColumnWidth(2, 130)
-        self.tableStudents.setColumnWidth(3, 100)
-        self.tableStudents.setColumnWidth(4, 70)
+            tbl.horizontalHeader().setStretchLastSection(False)
+            tbl.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+            tbl.horizontalHeader().setMinimumSectionSize(60)
 
         _apply_student_id_validator(self.lineStudentId)
         _apply_code_validator(self.lineCollegeCode)
@@ -613,7 +468,6 @@ class EstudyoApp(QtWidgets.QMainWindow):
         _apply_name_validator(self.lineProgramName)
         _apply_name_validator(self.lineFirstName)
         _apply_name_validator(self.lineLastName)
-
         self._populate_inline_combos()
 
     def _populate_inline_combos(self):
@@ -635,6 +489,7 @@ class EstudyoApp(QtWidgets.QMainWindow):
 
         self.btnSearch.clicked.connect(self._search_students)
         self.lineSearchInput.returnPressed.connect(self._search_students)
+        self.lineSearchInput.textChanged.connect(lambda t: self._search_students() if t == "" else None)
         self.btnSort.clicked.connect(self._sort_students)
         self.btnEdit.clicked.connect(self._edit_student)
         self.btnDelete.clicked.connect(self._delete_student)
@@ -649,6 +504,7 @@ class EstudyoApp(QtWidgets.QMainWindow):
         self.btnClearProgram.clicked.connect(self._clear_program_form)
         self.btnSearchProgram.clicked.connect(self._search_programs)
         self.lineSearchProgram.returnPressed.connect(self._search_programs)
+        self.lineSearchProgram.textChanged.connect(lambda t: self._search_programs() if t == "" else None)
         self.btnSortProgram.clicked.connect(self._sort_programs)
         self.btnEditProgram.clicked.connect(self._edit_program)
         self.btnDeleteProgram.clicked.connect(self._delete_program)
@@ -660,6 +516,7 @@ class EstudyoApp(QtWidgets.QMainWindow):
         self.btnClearCollege.clicked.connect(self._clear_college_form)
         self.btnSearchCollege.clicked.connect(self._search_colleges)
         self.lineSearchCollege.returnPressed.connect(self._search_colleges)
+        self.lineSearchCollege.textChanged.connect(lambda t: self._search_colleges() if t == "" else None)
         self.btnSortCollege.clicked.connect(self._sort_colleges)
         self.btnEditCollege.clicked.connect(self._edit_college)
         self.btnDeleteCollege.clicked.connect(self._delete_college)
@@ -956,7 +813,7 @@ class EstudyoApp(QtWidgets.QMainWindow):
                 val = r_data.get(key)
                 val = str(val) if val is not None else NULL_DISPLAY
                 item = QTableWidgetItem(val)
-                item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignHCenter)
                 if c in null_cols and val == NULL_DISPLAY:
                     item.setForeground(QColor("#c62828"))
                     f = item.font(); f.setBold(True); item.setFont(f)
@@ -980,24 +837,6 @@ class EstudyoApp(QtWidgets.QMainWindow):
         item = tbl.item(row, col)
         return item.text() if item else None
 
-class SeedingDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Estudyo v2 — First Run Setup")
-        self.setFixedSize(400, 160)
-        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint)
-        self.setStyleSheet("QDialog{background:#f0f7ff;} QLabel{color:#0d2c54;font-size:13px;}")
-        lay = QtWidgets.QVBoxLayout(self)
-        self.label = QLabel("🌱  Seeding database with sample data…\nThis only runs once.")
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.bar = QtWidgets.QProgressBar()
-        self.bar.setRange(0, 100); self.bar.setValue(0)
-        self.bar.setStyleSheet(
-            "QProgressBar{border-radius:6px;border:1px solid #90caf9;}"
-            "QProgressBar::chunk{background:#1565c0;border-radius:6px;}"
-        )
-        lay.addStretch(); lay.addWidget(self.label); lay.addWidget(self.bar); lay.addStretch()
-
 def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle("Fusion")
@@ -1008,26 +847,7 @@ def main():
         QMessageBox.critical(None, "Database Connection Error", str(e))
         sys.exit(1)
 
-    if db.count_students() < 5000:
-        splash = SeedingDialog()
-        splash.show()
-        seeder = SeederThread(db)
-        seeder.progress.connect(splash.bar.setValue)
-
-        def _done():
-            splash.close()
-            app._win = EstudyoApp(db)
-
-        def _err(msg):
-            splash.close()
-            QMessageBox.warning(None, "Seeder Warning", msg)
-            app._win = EstudyoApp(db)
-
-        seeder.done.connect(_done)
-        seeder.error.connect(_err)
-        seeder.start()
-    else:
-        app._win = EstudyoApp(db)
+    app._win = EstudyoApp(db)
 
     sys.exit(app.exec())
 
