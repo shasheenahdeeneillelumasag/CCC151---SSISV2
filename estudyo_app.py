@@ -4,8 +4,8 @@ import os
 from PyQt6 import QtWidgets, uic
 from PyQt6.QtWidgets import (
     QMessageBox, QTableWidgetItem, QHeaderView, QAbstractItemView,
-    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel,
-    QLineEdit, QComboBox, QPushButton, QGroupBox,
+    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
+    QLineEdit, QComboBox, QPushButton, QGroupBox, QScrollArea,
 )
 from PyQt6.QtCore import Qt, QRegularExpression, QSize
 from PyQt6.QtGui import QPixmap, QIcon, QPainter, QRegularExpressionValidator, QColor
@@ -21,7 +21,6 @@ DB_CONFIG = {
     "database": "estudyo_db"
 }
 
-PAGE_SIZE    = 50
 NULL_DISPLAY = "-NULL-"
 
 class DBManager:
@@ -42,9 +41,9 @@ class DBManager:
             tmp.commit(); cur.close(); tmp.close()
             self.conn = mysql.connector.connect(**DB_CONFIG)
             self.conn.autocommit = True
-        except Error as e:
+        except Error as exc:
             raise ConnectionError(
-                f"Cannot connect to MySQL.\n\nError: {e}\n\n"
+                f"Cannot connect to MySQL.\n\nError: {exc}\n\n"
                 "Please check DB_CONFIG in estudyo_app.py and make sure MySQL is running."
             )
 
@@ -90,7 +89,8 @@ class DBManager:
             "CREATE INDEX IF NOT EXISTS idx_p_coll  ON programs(college_code)",
         ]:
             try: cur.execute(sql)
-            except: pass
+            except Exception:
+                pass
         self.conn.commit(); cur.close()
 
     def _exec(self, sql, params=None):
@@ -106,10 +106,10 @@ class DBManager:
         row = cur.fetchone(); cur.close(); return row
 
     # Colleges
-    def get_colleges(self, search="", sort_col="code", sort_dir="ASC", page=1):
+    def get_colleges(self, search="", sort_col="code", sort_dir="ASC", page=1, page_size=10):
         col = sort_col if sort_col in {"code", "name"} else "code"
         direction = "DESC" if sort_dir.upper() == "DESC" else "ASC"
-        offset = (page - 1) * PAGE_SIZE
+        offset = (page - 1) * page_size
         where, params = "", []
         if search:
             where = "WHERE code LIKE %s OR name LIKE %s"
@@ -117,7 +117,7 @@ class DBManager:
         total = self._fetchone(f"SELECT COUNT(*) as cnt FROM colleges {where}", params)["cnt"]
         rows  = self._fetch(
             f"SELECT * FROM colleges {where} ORDER BY {col} {direction} "
-            f"LIMIT {PAGE_SIZE} OFFSET {offset}", params
+            f"LIMIT {page_size} OFFSET {offset}", params
         )
         return rows, total
 
@@ -141,10 +141,10 @@ class DBManager:
         return self._fetchone("SELECT COUNT(*) as cnt FROM programs WHERE college_code=%s", (code,))["cnt"] > 0
 
     # Programs
-    def get_programs(self, search="", sort_col="code", sort_dir="ASC", page=1):
+    def get_programs(self, search="", sort_col="code", sort_dir="ASC", page=1, page_size=10):
         col = sort_col if sort_col in {"code", "name", "college_code"} else "code"
         direction = "DESC" if sort_dir.upper() == "DESC" else "ASC"
-        offset = (page - 1) * PAGE_SIZE
+        offset = (page - 1) * page_size
         where, params = "", []
         if search:
             where = "WHERE p.code LIKE %s OR p.name LIKE %s OR p.college_code LIKE %s"
@@ -153,7 +153,7 @@ class DBManager:
         rows  = self._fetch(
             f"SELECT p.code, p.name, COALESCE(p.college_code, '-NULL-') AS college_code "
             f"FROM programs p {where} ORDER BY {col} {direction} "
-            f"LIMIT {PAGE_SIZE} OFFSET {offset}", params
+            f"LIMIT {page_size} OFFSET {offset}", params
         )
         return rows, total
 
@@ -181,11 +181,11 @@ class DBManager:
 
     # Students
     def get_students(self, search="", search_field="all",
-                     sort_col="id", sort_dir="ASC", page=1):
+                 sort_col="id", sort_dir="ASC", page=1, page_size=10):
         allowed = {"id", "first_name", "last_name", "gender", "year_level", "program_code"}
         col = sort_col if sort_col in allowed else "id"
         direction = "DESC" if sort_dir.upper() == "DESC" else "ASC"
-        offset = (page - 1) * PAGE_SIZE
+        offset = (page - 1) * page_size
         where, params = "", []
         if search:
             s = f"%{search}%"
@@ -206,7 +206,7 @@ class DBManager:
             f"SELECT s.id, s.first_name, s.last_name, s.gender, s.year_level, "
             f"COALESCE(s.program_code, '-NULL-') AS program_code "
             f"FROM students s {where} ORDER BY {col} {direction} "
-            f"LIMIT {PAGE_SIZE} OFFSET {offset}", params
+            f"LIMIT {page_size} OFFSET {offset}", params
         )
         return rows, total
 
@@ -251,10 +251,12 @@ def _validate_sid(sid):
 def _apply_code_validator(le):
     rx = QRegularExpression(r"^[A-Za-z ()\s]*$")
     le.setValidator(QRegularExpressionValidator(rx))
-    le.textChanged.connect(
-        lambda t: (le.blockSignals(True), le.setText(t.upper()), le.blockSignals(False))
-        if t != t.upper() else None
-    )
+    def _upper(t):
+        if t != t.upper():
+            le.blockSignals(True)
+            le.setText(t.upper())
+            le.blockSignals(False)
+    le.textChanged.connect(_upper)
 
 def _apply_name_validator(le):
     rx = QRegularExpression(r"^[A-Za-z ()\-'\s]*$")
@@ -298,7 +300,6 @@ class _BaseDialog(QDialog):
 class StudentDialog(_BaseDialog):
     def __init__(self, parent, programs, student=None):
         super().__init__(parent, "Edit Student" if student else "Add Student")
-        self.student = student
         grp  = QGroupBox("Student Information"); form = QFormLayout(grp)
         form.setSpacing(10); form.setContentsMargins(16, 20, 16, 16)
 
@@ -313,7 +314,8 @@ class StudentDialog(_BaseDialog):
         _apply_name_validator(self.lineFirst)
         _apply_name_validator(self.lineLast)
 
-        self.comboProgram.addItem("— No Program (NULL) —", NULL_DISPLAY)
+        if not student:
+            self.comboProgram.addItem("— No Program (NULL) —", NULL_DISPLAY)
         for p in programs:
             self.comboProgram.addItem(f"{p['code']} — {p['name']}", p["code"])
 
@@ -323,10 +325,15 @@ class StudentDialog(_BaseDialog):
             idx = self.comboYear.findText(str(student["year_level"]))
             if idx >= 0: self.comboYear.setCurrentIndex(idx)
             pc = student.get("program_code", NULL_DISPLAY)
-            for i in range(self.comboProgram.count()):
-                if self.comboProgram.itemData(i) == pc:
-                    self.comboProgram.setCurrentIndex(i); break
-
+            if pc == NULL_DISPLAY:
+                self.comboProgram.insertItem(0, "— No Program (NULL) —", NULL_DISPLAY)
+                self.comboProgram.setCurrentIndex(0)
+                self.comboProgram.model().item(0).setEnabled(False)
+            else:
+                for i in range(self.comboProgram.count()):
+                    if self.comboProgram.itemData(i) == pc:
+                        self.comboProgram.setCurrentIndex(i); break
+                    
         form.addRow("Student ID:",  self.lineId)
         form.addRow("First Name:",  self.lineFirst)
         form.addRow("Last Name:",   self.lineLast)
@@ -387,14 +394,20 @@ class ProgramDialog(_BaseDialog):
         self.lineName = QLineEdit(program["name"] if program else "")
         self.comboCollege = QComboBox()
         _apply_code_validator(self.lineCode); _apply_name_validator(self.lineName)
-        self.comboCollege.addItem("— No College (NULL) —", NULL_DISPLAY)
+        if not program:
+            self.comboCollege.addItem("— No College (NULL) —", NULL_DISPLAY)
         for c in colleges:
             self.comboCollege.addItem(f"{c['code']} — {c['name']}", c["code"])
         if program:
             cc = program.get("college_code", NULL_DISPLAY)
-            for i in range(self.comboCollege.count()):
-                if self.comboCollege.itemData(i) == cc:
-                    self.comboCollege.setCurrentIndex(i); break
+            if cc == NULL_DISPLAY:
+                self.comboCollege.insertItem(0, "— No College (NULL) —", NULL_DISPLAY)
+                self.comboCollege.setCurrentIndex(0)
+                self.comboCollege.model().item(0).setEnabled(False)
+            else:
+                for i in range(self.comboCollege.count()):
+                    if self.comboCollege.itemData(i) == cc:
+                        self.comboCollege.setCurrentIndex(i); break
         form.addRow("Program Code:", self.lineCode)
         form.addRow("Program Name:", self.lineName)
         form.addRow("College:",      self.comboCollege)
@@ -458,9 +471,11 @@ class EstudyoApp(QtWidgets.QMainWindow):
             tbl.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
             tbl.setAlternatingRowColors(True)
             tbl.verticalHeader().setVisible(False)
+            tbl.verticalHeader().setDefaultSectionSize(30)
             tbl.horizontalHeader().setStretchLastSection(False)
             tbl.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
             tbl.horizontalHeader().setMinimumSectionSize(60)
+            tbl.horizontalHeader().setFixedHeight(36)
 
         _apply_student_id_validator(self.lineStudentId)
         _apply_code_validator(self.lineCollegeCode)
@@ -470,6 +485,30 @@ class EstudyoApp(QtWidgets.QMainWindow):
         _apply_name_validator(self.lineLastName)
         self._populate_inline_combos()
 
+        self.setMinimumSize(800, 600)
+        self.resize(1000, 720)
+        self._wrap_pages_scrollable()
+
+    def _wrap_pages_scrollable(self):
+        for i in range(self.stackedWidget.count()):
+            page = self.stackedWidget.widget(i)
+            old_layout = page.layout()
+            if not old_layout:
+                continue
+            inner = QtWidgets.QWidget()
+            inner.setObjectName(f"scrollInner_{i}")
+            inner.setLayout(old_layout)
+            scroll = QScrollArea()
+            scroll.setWidget(inner)
+            scroll.setWidgetResizable(True)
+            scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+            scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+            new_layout = QVBoxLayout(page)
+            new_layout.setContentsMargins(0, 0, 0, 0)
+            new_layout.setSpacing(0)
+            new_layout.addWidget(scroll)
+
     def _populate_inline_combos(self):
         self.comboProgramCode.clear()
         self.comboProgramCode.addItem("— No Program (NULL) —", NULL_DISPLAY)
@@ -477,7 +516,6 @@ class EstudyoApp(QtWidgets.QMainWindow):
             self.comboProgramCode.addItem(f"{p['code']} — {p['name']}", p["code"])
 
         self.comboCollegeCode.clear()
-        self.comboCollegeCode.addItem("— No College (NULL) —", NULL_DISPLAY)
         for c in self.db.get_all_colleges():
             self.comboCollegeCode.addItem(f"{c['code']} — {c['name']}", c["code"])
 
@@ -523,6 +561,23 @@ class EstudyoApp(QtWidgets.QMainWindow):
         self.tableColleges.doubleClicked.connect(self._edit_college)
         self.btnCollegePrev.clicked.connect(self._college_prev)
         self.btnCollegeNext.clicked.connect(self._college_next)
+        self.comboStudentPageSize.currentIndexChanged.connect(
+            lambda: self._reset_and_load("student"))
+        self.comboProgramPageSize.currentIndexChanged.connect(
+            lambda: self._reset_and_load("program"))
+        self.comboCollegePageSize.currentIndexChanged.connect(
+            lambda: self._reset_and_load("college"))
+        
+    def _reset_and_load(self, kind):
+        if kind == "student":
+            self._student_page = 1
+            self._load_students()
+        elif kind == "program":
+            self._program_page = 1
+            self._load_programs()
+        elif kind == "college":
+            self._college_page = 1
+            self._load_colleges()
 
     def _load_initial_data(self):
         self.stackedWidget.setCurrentIndex(0)
@@ -563,10 +618,12 @@ class EstudyoApp(QtWidgets.QMainWindow):
         }
         sort_col = sort_map.get(self.comboSortField.currentText(), "id")
         sort_dir = "DESC" if "DESC" in self.comboSortDir.currentText() else "ASC"
+        page_size = int(self.comboStudentPageSize.currentText())
 
         rows, total = self.db.get_students(
             search=search, search_field=search_field,
-            sort_col=sort_col, sort_dir=sort_dir, page=self._student_page
+            sort_col=sort_col, sort_dir=sort_dir, page=self._student_page,
+            page_size=page_size
         )
         self._fill_table(self.tableStudents, rows,
             keys=["id", "first_name", "last_name", "program_code", "year_level", "gender"],
@@ -575,7 +632,7 @@ class EstudyoApp(QtWidgets.QMainWindow):
             total, self._student_page,
             self.labelStudentPage, self.labelStudentTotal,
             self.btnStudentPrev,   self.btnStudentNext,
-            "student"
+            "student", page_size=page_size
         )
 
     def _search_students(self):
@@ -597,7 +654,7 @@ class EstudyoApp(QtWidgets.QMainWindow):
         last   = self.lineLastName.text().strip()
         gender = self.comboGender.currentText()
         year   = self.comboYearLevel.currentText()
-        prog   = self.comboProgramCode.currentData()
+        prog   = self.comboProgramCode.currentData() or NULL_DISPLAY
 
         if not all([sid, first, last]):
             QMessageBox.warning(self, "Input Error", "Please fill in Student ID, First Name, and Last Name.")
@@ -610,8 +667,8 @@ class EstudyoApp(QtWidgets.QMainWindow):
             self.db.add_student(sid, first, last, gender, prog, year)
             QMessageBox.information(self, "Success", "Student added successfully.")
             self._clear_student_form(); self._load_students()
-        except Exception as e:
-            QMessageBox.warning(self, "Error", str(e))
+        except Exception as exc:
+            QMessageBox.warning(self, "Error", str(exc))
 
     def _edit_student(self):
         sid = self._selected_col(self.tableStudents, 0)
@@ -631,8 +688,8 @@ class EstudyoApp(QtWidgets.QMainWindow):
                                      d["gender"], d["program_code"], d["year_level"])
                 self._load_students()
                 QMessageBox.information(self, "Success", "Student updated.")
-            except Exception as e:
-                QMessageBox.warning(self, "Error", str(e))
+            except Exception as exc:
+                QMessageBox.warning(self, "Error", str(exc))
 
     def _delete_student(self):
         sid = self._selected_col(self.tableStudents, 0)
@@ -655,8 +712,10 @@ class EstudyoApp(QtWidgets.QMainWindow):
         sort_map = {"Program Code": "code", "Program Name": "name", "College Code": "college_code"}
         sort_col = sort_map.get(self.comboSortProgram.currentText(), "code")
         sort_dir = "DESC" if "DESC" in self.comboSortDirProgram.currentText() else "ASC"
+        page_size = int(self.comboProgramPageSize.currentText())
         rows, total = self.db.get_programs(
-            search=search, sort_col=sort_col, sort_dir=sort_dir, page=self._program_page
+            search=search, sort_col=sort_col, sort_dir=sort_dir, page=self._program_page,
+            page_size=page_size
         )
         self._fill_table(self.tablePrograms, rows,
             keys=["code", "name", "college_code"], null_cols={2})
@@ -664,7 +723,7 @@ class EstudyoApp(QtWidgets.QMainWindow):
             total, self._program_page,
             self.labelProgramPage, self.labelProgramTotal,
             self.btnProgramPrev,   self.btnProgramNext,
-            "program"
+            "program", page_size=page_size
         )
 
     def _search_programs(self):
@@ -683,15 +742,15 @@ class EstudyoApp(QtWidgets.QMainWindow):
     def _add_program_inline(self):
         code = self.lineProgramCode.text().strip()
         name = self.lineProgramName.text().strip()
-        coll = self.comboCollegeCode.currentData()
+        coll = self.comboCollegeCode.currentData() or NULL_DISPLAY
         if not all([code, name]):
             QMessageBox.warning(self, "Input Error", "Please fill in Program Code and Name."); return
         try:
             self.db.add_program(code, name, coll)
             QMessageBox.information(self, "Success", "Program added.")
             self._clear_program_form(); self._load_programs(); self._populate_inline_combos()
-        except Exception as e:
-            QMessageBox.warning(self, "Error", str(e))
+        except Exception as exc:
+            QMessageBox.warning(self, "Error", str(exc))
 
     def _edit_program(self):
         code = self._selected_col(self.tablePrograms, 0)
@@ -709,8 +768,8 @@ class EstudyoApp(QtWidgets.QMainWindow):
                 self.db.edit_program(row["code"], d["code"], d["name"], d["college_code"])
                 self._load_programs(); self._populate_inline_combos()
                 QMessageBox.information(self, "Success", "Program updated.")
-            except Exception as e:
-                QMessageBox.warning(self, "Error", str(e))
+            except Exception as exc:
+                QMessageBox.warning(self, "Error", str(exc))
 
     def _delete_program(self):
         code = self._selected_col(self.tablePrograms, 0)
@@ -735,15 +794,17 @@ class EstudyoApp(QtWidgets.QMainWindow):
         sort_map = {"College Code": "code", "College Name": "name"}
         sort_col = sort_map.get(self.comboSortCollege.currentText(), "code")
         sort_dir = "DESC" if "DESC" in self.comboSortDirCollege.currentText() else "ASC"
+        page_size = int(self.comboCollegePageSize.currentText())
         rows, total = self.db.get_colleges(
-            search=search, sort_col=sort_col, sort_dir=sort_dir, page=self._college_page
+            search=search, sort_col=sort_col, sort_dir=sort_dir, page=self._college_page,
+            page_size=page_size
         )
         self._fill_table(self.tableColleges, rows, keys=["code", "name"])
         self._update_pagination(
             total, self._college_page,
             self.labelCollegePage, self.labelCollegeTotal,
             self.btnCollegePrev,   self.btnCollegeNext,
-            "college"
+            "college", page_size=page_size
         )
 
     def _search_colleges(self):
@@ -768,8 +829,8 @@ class EstudyoApp(QtWidgets.QMainWindow):
             self.db.add_college(code, name)
             QMessageBox.information(self, "Success", "College added.")
             self._clear_college_form(); self._load_colleges(); self._populate_inline_combos()
-        except Exception as e:
-            QMessageBox.warning(self, "Error", str(e))
+        except Exception as exc:
+            QMessageBox.warning(self, "Error", str(exc))
 
     def _edit_college(self):
         code = self._selected_col(self.tableColleges, 0)
@@ -784,8 +845,8 @@ class EstudyoApp(QtWidgets.QMainWindow):
                 self.db.edit_college(row["code"], d["code"], d["name"])
                 self._load_colleges(); self._populate_inline_combos()
                 QMessageBox.information(self, "Success", "College updated.")
-            except Exception as e:
-                QMessageBox.warning(self, "Error", str(e))
+            except Exception as exc:
+                QMessageBox.warning(self, "Error", str(exc))
 
     def _delete_college(self):
         code = self._selected_col(self.tableColleges, 0)
@@ -809,6 +870,7 @@ class EstudyoApp(QtWidgets.QMainWindow):
         tbl.setRowCount(0)
         for r_data in rows:
             r = tbl.rowCount(); tbl.insertRow(r)
+            tbl.setRowHeight(r, 30)
             for c, key in enumerate(keys):
                 val = r_data.get(key)
                 val = str(val) if val is not None else NULL_DISPLAY
@@ -818,9 +880,12 @@ class EstudyoApp(QtWidgets.QMainWindow):
                     item.setForeground(QColor("#c62828"))
                     f = item.font(); f.setBold(True); item.setFont(f)
                 tbl.setItem(r, c, item)
+        
+        tbl.setFixedHeight(36 + max(tbl.rowCount(), 1) * 30 + 2)
+        tbl.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-    def _update_pagination(self, total, page, lbl_page, lbl_total, btn_prev, btn_next, kind):
-        total_pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
+    def _update_pagination(self, total, page, lbl_page, lbl_total, btn_prev, btn_next, kind, page_size=10):
+        total_pages = max(1, (total + page_size - 1) // page_size)
         page = min(page, total_pages)
 
         if kind == "student":   self._student_page = page
@@ -843,8 +908,8 @@ def main():
 
     try:
         db = DBManager()
-    except ConnectionError as e:
-        QMessageBox.critical(None, "Database Connection Error", str(e))
+    except ConnectionError as exc:
+        QMessageBox.critical(None, "Database Connection Error", str(exc))
         sys.exit(1)
 
     app._win = EstudyoApp(db)
