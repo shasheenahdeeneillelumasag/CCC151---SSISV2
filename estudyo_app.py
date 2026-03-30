@@ -511,7 +511,6 @@ class EstudyoApp(QtWidgets.QMainWindow):
 
     def _populate_inline_combos(self):
         self.comboProgramCode.clear()
-        self.comboProgramCode.addItem("— No Program (NULL) —", NULL_DISPLAY)
         for p in self.db.get_all_programs():
             self.comboProgramCode.addItem(f"{p['code']} — {p['name']}", p["code"])
 
