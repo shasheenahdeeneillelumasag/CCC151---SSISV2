@@ -449,6 +449,9 @@ QPushButton:checked { background-color: rgba(100,181,246,0.18); border-left: 4px
                     <height>16777215</height>
                    </size>
                   </property>
+                  <property name="styleSheet">
+                   <string notr="true">QLabel { border: none; background: transparent; }</string>
+                  </property>
                   <property name="text">
                    <string>Search by:</string>
                   </property>
@@ -528,6 +531,9 @@ QPushButton:hover {
                     <width>70</width>
                     <height>16777215</height>
                    </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QLabel { border: none; background: transparent; }</string>
                   </property>
                   <property name="text">
                    <string>Sort by:</string>
@@ -1229,6 +1235,50 @@ QPushButton:hover {
                <number>8</number>
               </property>
               <item>
+               <widget class="QLabel" name="labelSearchByProgram">
+                <property name="minimumSize">
+                 <size>
+                  <width>70</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>70</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QLabel { border: none; background: transparent; }</string>
+                </property>
+                <property name="text">
+                 <string>Search by:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboProgramSearchField">
+                <property name="styleSheet">
+                 <string notr="true">QComboBox { background-color: white; }</string>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>Program Code</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Program Name</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>College Code</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
                <widget class="QLineEdit" name="lineSearchProgram">
                 <property name="placeholderText">
                  <string>Search programs...</string>
@@ -1252,6 +1302,16 @@ QPushButton:hover {
                 </property>
                 <property name="text">
                  <string>Search</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelSortByProgram">
+                <property name="styleSheet">
+                 <string notr="true">QLabel { border: none; background: transparent; }</string>
+                </property>
+                <property name="text">
+                 <string>Sort by:</string>
                 </property>
                </widget>
               </item>
@@ -1674,6 +1734,45 @@ QPushButton:hover {
                <number>8</number>
               </property>
               <item>
+               <widget class="QLabel" name="labelSearchByCollege">
+                <property name="minimumSize">
+                 <size>
+                  <width>70</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>70</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QLabel { border: none; background: transparent; }</string>
+                </property>
+                <property name="text">
+                 <string>Search by:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboCollegeSearchField">
+                <property name="styleSheet">
+                 <string notr="true">QComboBox { background-color: white; }</string>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>College Code</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>College Name</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
                <widget class="QLineEdit" name="lineSearchCollege">
                 <property name="placeholderText">
                  <string>Search colleges...</string>
@@ -1697,6 +1796,16 @@ QPushButton:hover {
                 </property>
                 <property name="text">
                  <string>Search</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelSortByCollege">
+                <property name="styleSheet">
+                 <string notr="true">QLabel { border: none; background: transparent; }</string>
+                </property>
+                <property name="text">
+                 <string>Sort by:</string>
                 </property>
                </widget>
               </item>

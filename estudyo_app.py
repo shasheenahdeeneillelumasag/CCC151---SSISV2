@@ -106,14 +106,20 @@ class DBManager:
         row = cur.fetchone(); cur.close(); return row
 
     # Colleges
-    def get_colleges(self, search="", sort_col="code", sort_dir="ASC", page=1, page_size=10):
+    def get_colleges(self, search="", search_field="all", sort_col="code", sort_dir="ASC", page=1, page_size=10):
         col = sort_col if sort_col in {"code", "name"} else "code"
         direction = "DESC" if sort_dir.upper() == "DESC" else "ASC"
         offset = (page - 1) * page_size
         where, params = "", []
         if search:
-            where = "WHERE code LIKE %s OR name LIKE %s"
-            params = [f"%{search}%", f"%{search}%"]
+            s = f"%{search}%"
+            if search_field == "code":
+                where, params = "WHERE code LIKE %s", [s]
+            elif search_field == "name":
+                where, params = "WHERE name LIKE %s", [s]
+            else:
+                where = "WHERE code LIKE %s OR name LIKE %s"
+                params = [s, s]
         total = self._fetchone(f"SELECT COUNT(*) as cnt FROM colleges {where}", params)["cnt"]
         rows  = self._fetch(
             f"SELECT * FROM colleges {where} ORDER BY {col} {direction} "
@@ -141,14 +147,22 @@ class DBManager:
         return self._fetchone("SELECT COUNT(*) as cnt FROM programs WHERE college_code=%s", (code,))["cnt"] > 0
 
     # Programs
-    def get_programs(self, search="", sort_col="code", sort_dir="ASC", page=1, page_size=10):
+    def get_programs(self, search="", search_field="all", sort_col="code", sort_dir="ASC", page=1, page_size=10):
         col = sort_col if sort_col in {"code", "name", "college_code"} else "code"
         direction = "DESC" if sort_dir.upper() == "DESC" else "ASC"
         offset = (page - 1) * page_size
         where, params = "", []
         if search:
-            where = "WHERE p.code LIKE %s OR p.name LIKE %s OR p.college_code LIKE %s"
-            params = [f"%{search}%"] * 3
+            s = f"%{search}%"
+            if search_field == "code":
+                where, params = "WHERE p.code LIKE %s", [s]
+            elif search_field == "name":
+                where, params = "WHERE p.name LIKE %s", [s]
+            elif search_field == "college_code":
+                where, params = "WHERE p.college_code LIKE %s", [s]
+            else:
+                where = "WHERE p.code LIKE %s OR p.name LIKE %s OR p.college_code LIKE %s"
+                params = [s, s, s]
         total = self._fetchone(f"SELECT COUNT(*) as cnt FROM programs p {where}", params)["cnt"]
         rows  = self._fetch(
             f"SELECT p.code, p.name, COALESCE(p.college_code, '-NULL-') AS college_code "
@@ -542,6 +556,7 @@ class EstudyoApp(QtWidgets.QMainWindow):
         self.btnSearchProgram.clicked.connect(self._search_programs)
         self.lineSearchProgram.returnPressed.connect(self._search_programs)
         self.lineSearchProgram.textChanged.connect(lambda t: self._search_programs() if t == "" else None)
+        self.comboProgramSearchField.currentIndexChanged.connect(self._search_programs)
         self.btnSortProgram.clicked.connect(self._sort_programs)
         self.btnEditProgram.clicked.connect(self._edit_program)
         self.btnDeleteProgram.clicked.connect(self._delete_program)
@@ -554,6 +569,7 @@ class EstudyoApp(QtWidgets.QMainWindow):
         self.btnSearchCollege.clicked.connect(self._search_colleges)
         self.lineSearchCollege.returnPressed.connect(self._search_colleges)
         self.lineSearchCollege.textChanged.connect(lambda t: self._search_colleges() if t == "" else None)
+        self.comboCollegeSearchField.currentIndexChanged.connect(self._search_colleges)
         self.btnSortCollege.clicked.connect(self._sort_colleges)
         self.btnEditCollege.clicked.connect(self._edit_college)
         self.btnDeleteCollege.clicked.connect(self._delete_college)
@@ -708,13 +724,19 @@ class EstudyoApp(QtWidgets.QMainWindow):
 
     def _load_programs(self):
         search = self.lineSearchProgram.text().strip()
+        field_map = {
+            "Program Code": "code",
+            "Program Name": "name",
+            "College Code": "college_code",
+        }
+        search_field = field_map.get(self.comboProgramSearchField.currentText(), "all")
         sort_map = {"Program Code": "code", "Program Name": "name", "College Code": "college_code"}
         sort_col = sort_map.get(self.comboSortProgram.currentText(), "code")
         sort_dir = "DESC" if "DESC" in self.comboSortDirProgram.currentText() else "ASC"
         page_size = int(self.comboProgramPageSize.currentText())
         rows, total = self.db.get_programs(
-            search=search, sort_col=sort_col, sort_dir=sort_dir, page=self._program_page,
-            page_size=page_size
+            search=search, search_field=search_field, sort_col=sort_col, sort_dir=sort_dir,
+            page=self._program_page, page_size=page_size
         )
         self._fill_table(self.tablePrograms, rows,
             keys=["code", "name", "college_code"], null_cols={2})
@@ -790,13 +812,18 @@ class EstudyoApp(QtWidgets.QMainWindow):
 
     def _load_colleges(self):
         search = self.lineSearchCollege.text().strip()
+        field_map = {
+            "College Code": "code",
+            "College Name": "name",
+        }
+        search_field = field_map.get(self.comboCollegeSearchField.currentText(), "all")
         sort_map = {"College Code": "code", "College Name": "name"}
         sort_col = sort_map.get(self.comboSortCollege.currentText(), "code")
         sort_dir = "DESC" if "DESC" in self.comboSortDirCollege.currentText() else "ASC"
         page_size = int(self.comboCollegePageSize.currentText())
         rows, total = self.db.get_colleges(
-            search=search, sort_col=sort_col, sort_dir=sort_dir, page=self._college_page,
-            page_size=page_size
+            search=search, search_field=search_field, sort_col=sort_col, sort_dir=sort_dir,
+            page=self._college_page, page_size=page_size
         )
         self._fill_table(self.tableColleges, rows, keys=["code", "name"])
         self._update_pagination(
