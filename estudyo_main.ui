@@ -93,13 +93,14 @@ QPushButton:disabled { background-color: #b0bec5; color: #78909c; }
 QTableWidget {
     background-color: white;
     border: 1.5px solid #90caf9;
-    border-radius: 8px;
+    border-radius: 1px;
     gridline-color: #e3f2fd;
     alternate-background-color: #f0f8ff;
     font-size: 13px;
 }
 
 QTableWidget::item { padding: 8px; border-bottom: 1px solid #e3f2fd; }
+QTableWidget::item:last { border-bottom: none; }
 QTableWidget::item:selected { background-color: #bbdefb; color: #0d1b2a; }
 QTableWidget::item:hover { background-color: #e3f2fd; }
 
@@ -1317,6 +1318,9 @@ QPushButton:hover {
               </item>
               <item>
                <widget class="QComboBox" name="comboSortProgram">
+                <property name="styleSheet">
+                 <string notr="true">QComboBox { background-color: white; min-width: 120px; max-width: 120px; }</string>
+                </property>
                 <item>
                  <property name="text">
                   <string>Program Code</string>
@@ -1337,7 +1341,7 @@ QPushButton:hover {
               <item>
                <widget class="QComboBox" name="comboSortDirProgram">
                 <property name="styleSheet">
-                 <string notr="true">QComboBox { border:1.5px solid #90caf9; border-radius:6px; padding:6px 8px; font-size:12px; background:white; min-width:70px; }</string>
+                 <string notr="true">QComboBox { border:1.5px solid #90caf9; border-radius:6px; padding:6px 8px; font-size:12px; background:white; min-width:120px; max-width:120px; }</string>
                 </property>
                 <item>
                  <property name="text">
@@ -1811,6 +1815,9 @@ QPushButton:hover {
               </item>
               <item>
                <widget class="QComboBox" name="comboSortCollege">
+                <property name="styleSheet">
+                 <string notr="true">QComboBox { background-color: white; min-width: 120px; max-width: 120px; }</string>
+                </property>
                 <item>
                  <property name="text">
                   <string>College Code</string>
@@ -1826,7 +1833,7 @@ QPushButton:hover {
               <item>
                <widget class="QComboBox" name="comboSortDirCollege">
                 <property name="styleSheet">
-                 <string notr="true">QComboBox { border:1.5px solid #90caf9; border-radius:6px; padding:6px 8px; font-size:12px; background:white; min-width:70px; }</string>
+                 <string notr="true">QComboBox { border:1.5px solid #90caf9; border-radius:6px; padding:6px 8px; font-size:12px; background:white; min-width:120px; max-width:120px; }</string>
                 </property>
                 <item>
                  <property name="text">
